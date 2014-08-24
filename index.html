@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Synopsis</title>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<style type="text/css">
+table {
+     max-width: 95%;
+     border: 1px solid #ccc;
+}
+
+th {
+     
+     background-color: #000000;
+     color: #ffffff;
+     border: 1px solid white;
+}
+
+td {
+  background-color: #BBBBBB;
+  border: 1px solid white;
+}
+</style>
+
+<h2>Synopsis</h2>
+
+<p>In this report, we examine readings from wearable accelerometers on six subjects performing dumbell curls.  Each subject performed one set of 10 dumbbell lift in 5 different manners; one correctly, and four others performed in a common incorrect manner.   From the accelerometers&#39; readings, we will try to predict the type of lift that was performed.</p>
+
+<h2>Data Processing</h2>
+
+<p>From the <a href="http://groupware.les.inf.puc-rio.br/har">Human Activity Recognition Website</a> we get data on experiments on weight lifting (more specifically this <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">link</a>). Specifically, sensors were placed at four different locations: arm, forearm, belt and dumbbell.</p>
+
+<pre><code>## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.
+## Need help? Try the ggplot2 mailing list: http://groups.google.com/group/ggplot2.
+## 
+## Attaching package: &#39;psych&#39;
+## 
+## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     %+%
+## 
+## The following object is masked from &#39;package:randomForest&#39;:
+## 
+##     outlier
+</code></pre>
+
+<p>###Reading In Data</p>
+
+<p>Data is in a .csv file.  We read the data into a data frame. Data that is blank (empty, NA) or invalid (DIV/0) are converted to NAs</p>
+
+<h3>Data Slicing</h3>
+
+<p>We first split the data of 19622 observations in two sets.  A training set consisting of 60% of the data, and a testing set holding 40% of the data.  The testing set will be set aside to test the final model</p>
+
+<p>###Preprocessing Data</p>
+
+<p>After reading in the data, we note that out of the 160 variables, there are numerous columns that contain less than around 400 observations (i.e. NA) out of the full 19622 observations.  Therefore, we&#39;ll remove these variables from our data set, to avoid the more sparse observations overfitting our prediction.  For full details, view Appendix 1.</p>
+
+<p>We also remove columns that are not of apredictive nature (timestamps, names, windows, indexes).  Finally, we run a single Random Forest model to determine the most important variables.  We choose those with a Mean Decrease in Gini index of greater than 160, so that we end up with close to 20 variables.  See Appendix 2 for more details</p>
+
+<p>##Modelling Data</p>
+
+<p>We use a Random Forest to model our data.  We feel this is the best fit for the size and classification of our data. We also take advantage that cross validation is done in the Random Forest library. A summary of the model can be seen below. We estimate our out of sample error rate to be 1.29%.</p>
+
+<pre><code>## 
+## Call:
+##  randomForest(x = x, y = y, mtry = param$mtry) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 2
+## 
+##         OOB estimate of  error rate: 1.29%
+## Confusion matrix:
+##      A    B    C    D    E class.error
+## A 3335   12    0    1    0    0.003883
+## B   25 2227   26    1    0    0.022817
+## C    0   26 2017   11    0    0.018014
+## D    1    0   33 1894    2    0.018653
+## E    0    1    4    9 2151    0.006467
+</code></pre>
+
+<p>###Testing Model</p>
+
+<p>we use our testing data set to check our model.  We alter the testing data set in the same manner as the training set.</p>
+
+<p>###Results
+As we see below, the test on our model shows an accuracy rate of 98.84% and  an out of sample error rate of 1.16% on our test data set.</p>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 2221   17    0    0    0
+##          B    6 1487   14    1    0
+##          C    1   12 1351   25    2
+##          D    3    2    3 1259    3
+##          E    1    0    0    1 1437
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.988         
+##                  95% CI : (0.986, 0.991)
+##     No Information Rate : 0.284         
+##     P-Value [Acc &gt; NIR] : &lt;2e-16        
+##                                         
+##                   Kappa : 0.985         
+##  Mcnemar&#39;s Test P-Value : NA            
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             0.995    0.980    0.988    0.979    0.997
+## Specificity             0.997    0.997    0.994    0.998    1.000
+## Pos Pred Value          0.992    0.986    0.971    0.991    0.999
+## Neg Pred Value          0.998    0.995    0.997    0.996    0.999
+## Prevalence              0.284    0.193    0.174    0.164    0.184
+## Detection Rate          0.283    0.190    0.172    0.160    0.183
+## Detection Prevalence    0.285    0.192    0.177    0.162    0.183
+## Balanced Accuracy       0.996    0.988    0.991    0.989    0.998
+</code></pre>
+
+<p>And finally, some plots to show the accuracy of our predictors, and the error rate of our model as the number of trees increased.</p>
+
+<p><img src="data:image/png;base64,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" alt="plot of chunk graphs"/> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAkAAAAEgCAMAAABrWDzDAAAApVBMVEX9/v0AAAAAAFMAAH8AAP8AU6QAf6QAf8QAzQAA//9TAABTAFNTAH9TUwBTU39TU6RTf39Tf8RTpaRTpeJ/AAB/AFN/AH9/UwB/f1N/f39/paR/xcR/xf2kUwCkU1OkU3+kxaSk48Sk4+Kk4/3EfwDEpVPExX/E46TE/sTE/uLE/v3ipVPi46Ti/sTi/uLi/v39xX/946T9/sT9/uL9/v3/AAD/AP8uZ/MzAAAAN3RSTlP/////////////////////////////////////////////////////////////////////AP//g8NG6wAAAAlwSFlzAAALEgAACxIB0t1+/AAADqdJREFUeJztnQtjo8YVRoOMa3DbOFl5mz7s3WSldFurrSVrpP//08o8meEhgS4M4uo7yRobwQWhozsvHj8IAAj8MPUOgHkDgQAJCARIQCBAAgIBEhAIkIBAgAQEAiQgECABgQAJCARIQCBAAgIBEhAIkIBAgAQEAiQgECABgQAJCARIQCBAAgIBEhAIkIBAgAQEAiQg0Bk2y6n34LqBQJqP5/v3/WuiePl4vnsTYv0iZyfJ/bsQu8dk8ZuaW1vv7k2uJzXb6GWrYYNlR34b8YFAmkAgNWddTKU/SfKg/2hZTwq0+HPhiVwdAvFmm/zhNbl722hJionKHPKT/4cSyHzAxSf9bynTwza5//2T+eP+v8qVu38miVxsW8xarKxAfy1mfTz/9Ch1qYbVc14gEAO2iaX4KNeJTi8m8TQJtHu8/32pVbACmZV0brp/NwL9+vhSBP+7FKgW1sxZQqD5sy3EKaozRSVnsdo9qgQifyk+103iirAH/UmrUmttsokuz5RAyyKKLpfkDCPQb89Lsbn7XghUD7t7VOWbXnbiAzA8tybQgy10VvJ3Wbq8qF+8OpAvkK3YlAIpPaRAMgc5gVbr+/+93v+nUKUe1qS9xQoCzR4tkFSlWaCyCLMCFc34YhFPIFXZkWlFF4RWoM3dv56XOwjEHF+gpiKsKlCxfItAm6IokytagXaPf5M/WoswF5YbtyvQ6Uq0qmM/2KpyXaBtEmagYklZvTpRidYV7okPwPDcsEBBe/tTrQgrCin5meu+nZpA0gqZm1zFaF2E3tWa8Z+e9doq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" alt="plot of chunk graphs"/> </p>
+
+<p>##Appendix</p>
+
+<p>###Appendix 1 Description Of Training Data Set Before Processing</p>
+
+<table><thead>
+<tr>
+<th align="left"></th>
+<th align="right">variable #</th>
+<th align="right">n.obs</th>
+<th align="right">type</th>
+<th align="left">H1</th>
+<th align="left">T1</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">X</td>
+<td align="right">1</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">1</td>
+<td align="left">19622</td>
+</tr>
+<tr>
+<td align="left">user_name*</td>
+<td align="right">2</td>
+<td align="right">19622</td>
+<td align="right">3</td>
+<td align="left">carlitos</td>
+<td align="left">adelmo</td>
+</tr>
+<tr>
+<td align="left">raw_timestamp_part_1</td>
+<td align="right">3</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">1323084231</td>
+<td align="left">1322832937</td>
+</tr>
+<tr>
+<td align="left">raw_timestamp_part_2</td>
+<td align="right">4</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">788290</td>
+<td align="left">972293</td>
+</tr>
+<tr>
+<td align="left">cvtd_timestamp*</td>
+<td align="right">5</td>
+<td align="right">19622</td>
+<td align="right">3</td>
+<td align="left">05/12/2011 11:23</td>
+<td align="left">02/12/2011 13:35</td>
+</tr>
+<tr>
+<td align="left">new_window*</td>
+<td align="right">6</td>
+<td align="right">19622</td>
+<td align="right">3</td>
+<td align="left">no</td>
+<td align="left">yes</td>
+</tr>
+<tr>
+<td align="left">num_window</td>
+<td align="right">7</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">11</td>
+<td align="left">864</td>
+</tr>
+<tr>
+<td align="left">roll_belt</td>
+<td align="right">8</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">1.41</td>
+<td align="left">143</td>
+</tr>
+<tr>
+<td align="left">pitch_belt</td>
+<td align="right">9</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">8.07</td>
+<td align="left">-36</td>
+</tr>
+<tr>
+<td align="left">yaw_belt</td>
+<td align="right">10</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-94.4</td>
+<td align="left">132</td>
+</tr>
+<tr>
+<td align="left">total_accel_belt</td>
+<td align="right">11</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">3</td>
+<td align="left">18</td>
+</tr>
+<tr>
+<td align="left">kurtosis_roll_belt</td>
+<td align="right">12</td>
+<td align="right">396</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.176</td>
+</tr>
+<tr>
+<td align="left">kurtosis_picth_belt</td>
+<td align="right">13</td>
+<td align="right">374</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.063</td>
+</tr>
+<tr>
+<td align="left">kurtosis_yaw_belt*</td>
+<td align="right">14</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">skewness_roll_belt</td>
+<td align="right">15</td>
+<td align="right">397</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0.1969</td>
+</tr>
+<tr>
+<td align="left">skewness_roll_belt.1</td>
+<td align="right">16</td>
+<td align="right">374</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-0.5724</td>
+</tr>
+<tr>
+<td align="left">skewness_yaw_belt*</td>
+<td align="right">17</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">max_roll_belt</td>
+<td align="right">18</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">132</td>
+</tr>
+<tr>
+<td align="left">max_picth_belt</td>
+<td align="right">19</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">25</td>
+</tr>
+<tr>
+<td align="left">max_yaw_belt</td>
+<td align="right">20</td>
+<td align="right">396</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.2</td>
+</tr>
+<tr>
+<td align="left">min_roll_belt</td>
+<td align="right">21</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">123</td>
+</tr>
+<tr>
+<td align="left">min_pitch_belt</td>
+<td align="right">22</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">18</td>
+</tr>
+<tr>
+<td align="left">min_yaw_belt</td>
+<td align="right">23</td>
+<td align="right">396</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.2</td>
+</tr>
+<tr>
+<td align="left">amplitude_roll_belt</td>
+<td align="right">24</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">9</td>
+</tr>
+<tr>
+<td align="left">amplitude_pitch_belt</td>
+<td align="right">25</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">7</td>
+</tr>
+<tr>
+<td align="left">amplitude_yaw_belt</td>
+<td align="right">26</td>
+<td align="right">396</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">var_total_accel_belt</td>
+<td align="right">27</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">5.627</td>
+</tr>
+<tr>
+<td align="left">avg_roll_belt</td>
+<td align="right">28</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">151.1</td>
+</tr>
+<tr>
+<td align="left">stddev_roll_belt</td>
+<td align="right">29</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">4.753</td>
+</tr>
+<tr>
+<td align="left">var_roll_belt</td>
+<td align="right">30</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">22.59</td>
+</tr>
+<tr>
+<td align="left">avg_pitch_belt</td>
+<td align="right">31</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-33.63</td>
+</tr>
+<tr>
+<td align="left">stddev_pitch_belt</td>
+<td align="right">32</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">1.395</td>
+</tr>
+<tr>
+<td align="left">var_pitch_belt</td>
+<td align="right">33</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">1.947</td>
+</tr>
+<tr>
+<td align="left">avg_yaw_belt</td>
+<td align="right">34</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">126.9</td>
+</tr>
+<tr>
+<td align="left">stddev_yaw_belt</td>
+<td align="right">35</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">2.75</td>
+</tr>
+<tr>
+<td align="left">var_yaw_belt</td>
+<td align="right">36</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">7.564</td>
+</tr>
+<tr>
+<td align="left">gyros_belt_x</td>
+<td align="right">37</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0</td>
+<td align="left">0.35</td>
+</tr>
+<tr>
+<td align="left">gyros_belt_y</td>
+<td align="right">38</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0</td>
+<td align="left">-0.02</td>
+</tr>
+<tr>
+<td align="left">gyros_belt_z</td>
+<td align="right">39</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-0.02</td>
+<td align="left">-0.57</td>
+</tr>
+<tr>
+<td align="left">accel_belt_x</td>
+<td align="right">40</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-21</td>
+<td align="left">42</td>
+</tr>
+<tr>
+<td align="left">accel_belt_y</td>
+<td align="right">41</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">4</td>
+<td align="left">25</td>
+</tr>
+<tr>
+<td align="left">accel_belt_z</td>
+<td align="right">42</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">22</td>
+<td align="left">-171</td>
+</tr>
+<tr>
+<td align="left">magnet_belt_x</td>
+<td align="right">43</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-3</td>
+<td align="left">194</td>
+</tr>
+<tr>
+<td align="left">magnet_belt_y</td>
+<td align="right">44</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">599</td>
+<td align="left">566</td>
+</tr>
+<tr>
+<td align="left">magnet_belt_z</td>
+<td align="right">45</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-313</td>
+<td align="left">-349</td>
+</tr>
+<tr>
+<td align="left">roll_arm</td>
+<td align="right">46</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-128</td>
+<td align="left">-97.6</td>
+</tr>
+<tr>
+<td align="left">pitch_arm</td>
+<td align="right">47</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">22.5</td>
+<td align="left">-37.7</td>
+</tr>
+<tr>
+<td align="left">yaw_arm</td>
+<td align="right">48</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-161</td>
+<td align="left">71.5</td>
+</tr>
+<tr>
+<td align="left">total_accel_arm</td>
+<td align="right">49</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">34</td>
+<td align="left">41</td>
+</tr>
+<tr>
+<td align="left">var_accel_arm</td>
+<td align="right">50</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">54.26</td>
+</tr>
+<tr>
+<td align="left">avg_roll_arm</td>
+<td align="right">51</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-91.65</td>
+</tr>
+<tr>
+<td align="left">stddev_roll_arm</td>
+<td align="right">52</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">9.169</td>
+</tr>
+<tr>
+<td align="left">var_roll_arm</td>
+<td align="right">53</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">84.06</td>
+</tr>
+<tr>
+<td align="left">avg_pitch_arm</td>
+<td align="right">54</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-37.65</td>
+</tr>
+<tr>
+<td align="left">stddev_pitch_arm</td>
+<td align="right">55</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">3.616</td>
+</tr>
+<tr>
+<td align="left">var_pitch_arm</td>
+<td align="right">56</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">13.08</td>
+</tr>
+<tr>
+<td align="left">avg_yaw_arm</td>
+<td align="right">57</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">66.31</td>
+</tr>
+<tr>
+<td align="left">stddev_yaw_arm</td>
+<td align="right">58</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">15.48</td>
+</tr>
+<tr>
+<td align="left">var_yaw_arm</td>
+<td align="right">59</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">239.6</td>
+</tr>
+<tr>
+<td align="left">gyros_arm_x</td>
+<td align="right">60</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0</td>
+<td align="left">1.51</td>
+</tr>
+<tr>
+<td align="left">gyros_arm_y</td>
+<td align="right">61</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0</td>
+<td align="left">-1.06</td>
+</tr>
+<tr>
+<td align="left">gyros_arm_z</td>
+<td align="right">62</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-0.02</td>
+<td align="left">0.59</td>
+</tr>
+<tr>
+<td align="left">accel_arm_x</td>
+<td align="right">63</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-288</td>
+<td align="left">58</td>
+</tr>
+<tr>
+<td align="left">accel_arm_y</td>
+<td align="right">64</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">109</td>
+<td align="left">-152</td>
+</tr>
+<tr>
+<td align="left">accel_arm_z</td>
+<td align="right">65</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-123</td>
+<td align="left">-365</td>
+</tr>
+<tr>
+<td align="left">magnet_arm_x</td>
+<td align="right">66</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-368</td>
+<td align="left">362</td>
+</tr>
+<tr>
+<td align="left">magnet_arm_y</td>
+<td align="right">67</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">337</td>
+<td align="left">-84</td>
+</tr>
+<tr>
+<td align="left">magnet_arm_z</td>
+<td align="right">68</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">516</td>
+<td align="left">-539</td>
+</tr>
+<tr>
+<td align="left">kurtosis_roll_arm</td>
+<td align="right">69</td>
+<td align="right">328</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.326</td>
+</tr>
+<tr>
+<td align="left">kurtosis_picth_arm</td>
+<td align="right">70</td>
+<td align="right">326</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0.5096</td>
+</tr>
+<tr>
+<td align="left">kurtosis_yaw_arm</td>
+<td align="right">71</td>
+<td align="right">395</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-0.6274</td>
+</tr>
+<tr>
+<td align="left">skewness_roll_arm</td>
+<td align="right">72</td>
+<td align="right">329</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-0.5172</td>
+</tr>
+<tr>
+<td align="left">skewness_pitch_arm</td>
+<td align="right">73</td>
+<td align="right">326</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.269</td>
+</tr>
+<tr>
+<td align="left">skewness_yaw_arm</td>
+<td align="right">74</td>
+<td align="right">395</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-0.7715</td>
+</tr>
+<tr>
+<td align="left">max_roll_arm</td>
+<td align="right">75</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-33.7</td>
+</tr>
+<tr>
+<td align="left">max_picth_arm</td>
+<td align="right">76</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">79.5</td>
+</tr>
+<tr>
+<td align="left">max_yaw_arm</td>
+<td align="right">77</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">49</td>
+</tr>
+<tr>
+<td align="left">min_roll_arm</td>
+<td align="right">78</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-43.5</td>
+</tr>
+<tr>
+<td align="left">min_pitch_arm</td>
+<td align="right">79</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">27.5</td>
+</tr>
+<tr>
+<td align="left">min_yaw_arm</td>
+<td align="right">80</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">25</td>
+</tr>
+<tr>
+<td align="left">amplitude_roll_arm</td>
+<td align="right">81</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">9.8</td>
+</tr>
+<tr>
+<td align="left">amplitude_pitch_arm</td>
+<td align="right">82</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">52</td>
+</tr>
+<tr>
+<td align="left">amplitude_yaw_arm</td>
+<td align="right">83</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">24</td>
+</tr>
+<tr>
+<td align="left">roll_dumbbell</td>
+<td align="right">84</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">13.05</td>
+<td align="left">20.8</td>
+</tr>
+<tr>
+<td align="left">pitch_dumbbell</td>
+<td align="right">85</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-70.49</td>
+<td align="left">-19.7</td>
+</tr>
+<tr>
+<td align="left">yaw_dumbbell</td>
+<td align="right">86</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-84.87</td>
+<td align="left">-128.2</td>
+</tr>
+<tr>
+<td align="left">kurtosis_roll_dumbbell</td>
+<td align="right">87</td>
+<td align="right">401</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.132</td>
+</tr>
+<tr>
+<td align="left">kurtosis_picth_dumbbell</td>
+<td align="right">88</td>
+<td align="right">404</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-0.7225</td>
+</tr>
+<tr>
+<td align="left">kurtosis_yaw_dumbbell*</td>
+<td align="right">89</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">skewness_roll_dumbbell</td>
+<td align="right">90</td>
+<td align="right">402</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0.0955</td>
+</tr>
+<tr>
+<td align="left">skewness_pitch_dumbbell</td>
+<td align="right">91</td>
+<td align="right">405</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0.1057</td>
+</tr>
+<tr>
+<td align="left">skewness_yaw_dumbbell*</td>
+<td align="right">92</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">max_roll_dumbbell</td>
+<td align="right">93</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-19.7</td>
+</tr>
+<tr>
+<td align="left">max_picth_dumbbell</td>
+<td align="right">94</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-92</td>
+</tr>
+<tr>
+<td align="left">max_yaw_dumbbell</td>
+<td align="right">95</td>
+<td align="right">401</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.1</td>
+</tr>
+<tr>
+<td align="left">min_roll_dumbbell</td>
+<td align="right">96</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-33.1</td>
+</tr>
+<tr>
+<td align="left">min_pitch_dumbbell</td>
+<td align="right">97</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-128.2</td>
+</tr>
+<tr>
+<td align="left">min_yaw_dumbbell</td>
+<td align="right">98</td>
+<td align="right">401</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-1.1</td>
+</tr>
+<tr>
+<td align="left">amplitude_roll_dumbbell</td>
+<td align="right">99</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">13.41</td>
+</tr>
+<tr>
+<td align="left">amplitude_pitch_dumbbell</td>
+<td align="right">100</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">36.2</td>
+</tr>
+<tr>
+<td align="left">amplitude_yaw_dumbbell</td>
+<td align="right">101</td>
+<td align="right">401</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">total_accel_dumbbell</td>
+<td align="right">102</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">37</td>
+<td align="left">19</td>
+</tr>
+<tr>
+<td align="left">var_accel_dumbbell</td>
+<td align="right">103</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0.4217</td>
+</tr>
+<tr>
+<td align="left">avg_roll_dumbbell</td>
+<td align="right">104</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">37.34</td>
+</tr>
+<tr>
+<td align="left">stddev_roll_dumbbell</td>
+<td align="right">105</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">9.783</td>
+</tr>
+<tr>
+<td align="left">var_roll_dumbbell</td>
+<td align="right">106</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">95.7</td>
+</tr>
+<tr>
+<td align="left">avg_pitch_dumbbell</td>
+<td align="right">107</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-26.82</td>
+</tr>
+<tr>
+<td align="left">stddev_pitch_dumbbell</td>
+<td align="right">108</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">4.01</td>
+</tr>
+<tr>
+<td align="left">var_pitch_dumbbell</td>
+<td align="right">109</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">16.08</td>
+</tr>
+<tr>
+<td align="left">avg_yaw_dumbbell</td>
+<td align="right">110</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">-110</td>
+</tr>
+<tr>
+<td align="left">stddev_yaw_dumbbell</td>
+<td align="right">111</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">9.748</td>
+</tr>
+<tr>
+<td align="left">var_yaw_dumbbell</td>
+<td align="right">112</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">95.01</td>
+</tr>
+<tr>
+<td align="left">gyros_dumbbell_x</td>
+<td align="right">113</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0</td>
+<td align="left">0.02</td>
+</tr>
+<tr>
+<td align="left">gyros_dumbbell_y</td>
+<td align="right">114</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-0.02</td>
+<td align="left">0.02</td>
+</tr>
+<tr>
+<td align="left">gyros_dumbbell_z</td>
+<td align="right">115</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0</td>
+<td align="left">0.36</td>
+</tr>
+<tr>
+<td align="left">accel_dumbbell_x</td>
+<td align="right">116</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-234</td>
+<td align="left">-36</td>
+</tr>
+<tr>
+<td align="left">accel_dumbbell_y</td>
+<td align="right">117</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">47</td>
+<td align="left">38</td>
+</tr>
+<tr>
+<td align="left">accel_dumbbell_z</td>
+<td align="right">118</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-271</td>
+<td align="left">-176</td>
+</tr>
+<tr>
+<td align="left">magnet_dumbbell_x</td>
+<td align="right">119</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-559</td>
+<td align="left">-627</td>
+</tr>
+<tr>
+<td align="left">magnet_dumbbell_y</td>
+<td align="right">120</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">293</td>
+<td align="left">119</td>
+</tr>
+<tr>
+<td align="left">magnet_dumbbell_z</td>
+<td align="right">121</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-65</td>
+<td align="left">2</td>
+</tr>
+<tr>
+<td align="left">roll_forearm</td>
+<td align="right">122</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">28.4</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">pitch_forearm</td>
+<td align="right">123</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-63.9</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">yaw_forearm</td>
+<td align="right">124</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-153</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">kurtosis_roll_forearm</td>
+<td align="right">125</td>
+<td align="right">322</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">kurtosis_picth_forearm</td>
+<td align="right">126</td>
+<td align="right">321</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">kurtosis_yaw_forearm*</td>
+<td align="right">127</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">skewness_roll_forearm</td>
+<td align="right">128</td>
+<td align="right">323</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">skewness_pitch_forearm</td>
+<td align="right">129</td>
+<td align="right">321</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">skewness_yaw_forearm*</td>
+<td align="right">130</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">max_roll_forearm</td>
+<td align="right">131</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">max_picth_forearm</td>
+<td align="right">132</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">max_yaw_forearm</td>
+<td align="right">133</td>
+<td align="right">322</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">min_roll_forearm</td>
+<td align="right">134</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">min_pitch_forearm</td>
+<td align="right">135</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">min_yaw_forearm</td>
+<td align="right">136</td>
+<td align="right">322</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">amplitude_roll_forearm</td>
+<td align="right">137</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">amplitude_pitch_forearm</td>
+<td align="right">138</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">amplitude_yaw_forearm</td>
+<td align="right">139</td>
+<td align="right">322</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">NA</td>
+</tr>
+<tr>
+<td align="left">total_accel_forearm</td>
+<td align="right">140</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">36</td>
+<td align="left">33</td>
+</tr>
+<tr>
+<td align="left">var_accel_forearm</td>
+<td align="right">141</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">30.11</td>
+</tr>
+<tr>
+<td align="left">avg_roll_forearm</td>
+<td align="right">142</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">stddev_roll_forearm</td>
+<td align="right">143</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">var_roll_forearm</td>
+<td align="right">144</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">avg_pitch_forearm</td>
+<td align="right">145</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">stddev_pitch_forearm</td>
+<td align="right">146</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">var_pitch_forearm</td>
+<td align="right">147</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">avg_yaw_forearm</td>
+<td align="right">148</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">stddev_yaw_forearm</td>
+<td align="right">149</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">var_yaw_forearm</td>
+<td align="right">150</td>
+<td align="right">406</td>
+<td align="right">1</td>
+<td align="left">NA</td>
+<td align="left">0</td>
+</tr>
+<tr>
+<td align="left">gyros_forearm_x</td>
+<td align="right">151</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0.03</td>
+<td align="left">1.38</td>
+</tr>
+<tr>
+<td align="left">gyros_forearm_y</td>
+<td align="right">152</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">0</td>
+<td align="left">-0.64</td>
+</tr>
+<tr>
+<td align="left">gyros_forearm_z</td>
+<td align="right">153</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-0.02</td>
+<td align="left">0.08</td>
+</tr>
+<tr>
+<td align="left">accel_forearm_x</td>
+<td align="right">154</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">192</td>
+<td align="left">-278</td>
+</tr>
+<tr>
+<td align="left">accel_forearm_y</td>
+<td align="right">155</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">203</td>
+<td align="left">-159</td>
+</tr>
+<tr>
+<td align="left">accel_forearm_z</td>
+<td align="right">156</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-215</td>
+<td align="left">-52</td>
+</tr>
+<tr>
+<td align="left">magnet_forearm_x</td>
+<td align="right">157</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">-17</td>
+<td align="left">-60</td>
+</tr>
+<tr>
+<td align="left">magnet_forearm_y</td>
+<td align="right">158</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">654</td>
+<td align="left">-686</td>
+</tr>
+<tr>
+<td align="left">magnet_forearm_z</td>
+<td align="right">159</td>
+<td align="right">19622</td>
+<td align="right">1</td>
+<td align="left">476</td>
+<td align="left">-110</td>
+</tr>
+<tr>
+<td align="left">classe*</td>
+<td align="right">160</td>
+<td align="right">19622</td>
+<td align="right">3</td>
+<td align="left">A</td>
+<td align="left">E</td>
+</tr>
+</tbody></table>
+
+<p>###Appendix 2 Description Of Importance Of Predictors</p>
+
+<table><thead>
+<tr>
+<th align="left"></th>
+<th align="right">A</th>
+<th align="right">B</th>
+<th align="right">C</th>
+<th align="right">D</th>
+<th align="right">E</th>
+<th align="right">MeanDecreaseAccuracy</th>
+<th align="right">MeanDecreaseGini</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">roll_belt</td>
+<td align="right">0.0739</td>
+<td align="right">0.0959</td>
+<td align="right">0.1158</td>
+<td align="right">0.1290</td>
+<td align="right">0.1865</td>
+<td align="right">0.1151</td>
+<td align="right">719.8752</td>
+</tr>
+<tr>
+<td align="left">pitch_belt</td>
+<td align="right">0.0793</td>
+<td align="right">0.1197</td>
+<td align="right">0.0983</td>
+<td align="right">0.1004</td>
+<td align="right">0.0370</td>
+<td align="right">0.0861</td>
+<td align="right">411.1764</td>
+</tr>
+<tr>
+<td align="left">yaw_belt</td>
+<td align="right">0.1111</td>
+<td align="right">0.0903</td>
+<td align="right">0.1149</td>
+<td align="right">0.1446</td>
+<td align="right">0.0595</td>
+<td align="right">0.1037</td>
+<td align="right">518.5995</td>
+</tr>
+<tr>
+<td align="left">total_accel_belt</td>
+<td align="right">0.0175</td>
+<td align="right">0.0220</td>
+<td align="right">0.0256</td>
+<td align="right">0.0210</td>
+<td align="right">0.0210</td>
+<td align="right">0.0210</td>
+<td align="right">132.5179</td>
+</tr>
+<tr>
+<td align="left">gyros_belt_x</td>
+<td align="right">0.0141</td>
+<td align="right">0.0088</td>
+<td align="right">0.0188</td>
+<td align="right">0.0118</td>
+<td align="right">0.0044</td>
+<td align="right">0.0117</td>
+<td align="right">58.7196</td>
+</tr>
+<tr>
+<td align="left">gyros_belt_y</td>
+<td align="right">0.0093</td>
+<td align="right">0.0129</td>
+<td align="right">0.0191</td>
+<td align="right">0.0157</td>
+<td align="right">0.0063</td>
+<td align="right">0.0122</td>
+<td align="right">63.5377</td>
+</tr>
+<tr>
+<td align="left">gyros_belt_z</td>
+<td align="right">0.0245</td>
+<td align="right">0.0359</td>
+<td align="right">0.0412</td>
+<td align="right">0.0387</td>
+<td align="right">0.0306</td>
+<td align="right">0.0331</td>
+<td align="right">188.6099</td>
+</tr>
+<tr>
+<td align="left">accel_belt_x</td>
+<td align="right">0.0143</td>
+<td align="right">0.0173</td>
+<td align="right">0.0219</td>
+<td align="right">0.0161</td>
+<td align="right">0.0073</td>
+<td align="right">0.0152</td>
+<td align="right">66.9207</td>
+</tr>
+<tr>
+<td align="left">accel_belt_y</td>
+<td align="right">0.0160</td>
+<td align="right">0.0200</td>
+<td align="right">0.0255</td>
+<td align="right">0.0316</td>
+<td align="right">0.0121</td>
+<td align="right">0.0203</td>
+<td align="right">82.6509</td>
+</tr>
+<tr>
+<td align="left">accel_belt_z</td>
+<td align="right">0.0296</td>
+<td align="right">0.0379</td>
+<td align="right">0.0500</td>
+<td align="right">0.0398</td>
+<td align="right">0.0365</td>
+<td align="right">0.0377</td>
+<td align="right">224.8569</td>
+</tr>
+<tr>
+<td align="left">magnet_belt_x</td>
+<td align="right">0.0177</td>
+<td align="right">0.0298</td>
+<td align="right">0.0422</td>
+<td align="right">0.0344</td>
+<td align="right">0.0163</td>
+<td align="right">0.0268</td>
+<td align="right">141.9970</td>
+</tr>
+<tr>
+<td align="left">magnet_belt_y</td>
+<td align="right">0.0341</td>
+<td align="right">0.0520</td>
+<td align="right">0.0522</td>
+<td align="right">0.0624</td>
+<td align="right">0.0461</td>
+<td align="right">0.0475</td>
+<td align="right">234.8605</td>
+</tr>
+<tr>
+<td align="left">magnet_belt_z</td>
+<td align="right">0.0441</td>
+<td align="right">0.0618</td>
+<td align="right">0.0639</td>
+<td align="right">0.0772</td>
+<td align="right">0.0502</td>
+<td align="right">0.0575</td>
+<td align="right">254.5512</td>
+</tr>
+<tr>
+<td align="left">roll_arm</td>
+<td align="right">0.0240</td>
+<td align="right">0.0358</td>
+<td align="right">0.0518</td>
+<td align="right">0.0588</td>
+<td align="right">0.0200</td>
+<td align="right">0.0361</td>
+<td align="right">181.6139</td>
+</tr>
+<tr>
+<td align="left">pitch_arm</td>
+<td align="right">0.0164</td>
+<td align="right">0.0214</td>
+<td align="right">0.0209</td>
+<td align="right">0.0233</td>
+<td align="right">0.0113</td>
+<td align="right">0.0183</td>
+<td align="right">102.3988</td>
+</tr>
+<tr>
+<td align="left">yaw_arm</td>
+<td align="right">0.0244</td>
+<td align="right">0.0191</td>
+<td align="right">0.0265</td>
+<td align="right">0.0276</td>
+<td align="right">0.0115</td>
+<td align="right">0.0219</td>
+<td align="right">148.3881</td>
+</tr>
+<tr>
+<td align="left">total_accel_arm</td>
+<td align="right">0.0082</td>
+<td align="right">0.0075</td>
+<td align="right">0.0114</td>
+<td align="right">0.0133</td>
+<td align="right">0.0065</td>
+<td align="right">0.0092</td>
+<td align="right">62.3596</td>
+</tr>
+<tr>
+<td align="left">gyros_arm_x</td>
+<td align="right">0.0190</td>
+<td align="right">0.0131</td>
+<td align="right">0.0074</td>
+<td align="right">0.0120</td>
+<td align="right">0.0057</td>
+<td align="right">0.0122</td>
+<td align="right">81.4740</td>
+</tr>
+<tr>
+<td align="left">gyros_arm_y</td>
+<td align="right">0.0126</td>
+<td align="right">0.0156</td>
+<td align="right">0.0071</td>
+<td align="right">0.0134</td>
+<td align="right">0.0056</td>
+<td align="right">0.0111</td>
+<td align="right">85.4105</td>
+</tr>
+<tr>
+<td align="left">gyros_arm_z</td>
+<td align="right">0.0055</td>
+<td align="right">0.0047</td>
+<td align="right">0.0043</td>
+<td align="right">0.0042</td>
+<td align="right">0.0038</td>
+<td align="right">0.0046</td>
+<td align="right">39.3947</td>
+</tr>
+<tr>
+<td align="left">accel_arm_x</td>
+<td align="right">0.0433</td>
+<td align="right">0.0331</td>
+<td align="right">0.0336</td>
+<td align="right">0.0560</td>
+<td align="right">0.0237</td>
+<td align="right">0.0381</td>
+<td align="right">149.0164</td>
+</tr>
+<tr>
+<td align="left">accel_arm_y</td>
+<td align="right">0.0191</td>
+<td align="right">0.0202</td>
+<td align="right">0.0181</td>
+<td align="right">0.0189</td>
+<td align="right">0.0096</td>
+<td align="right">0.0174</td>
+<td align="right">95.6408</td>
+</tr>
+<tr>
+<td align="left">accel_arm_z</td>
+<td align="right">0.0178</td>
+<td align="right">0.0114</td>
+<td align="right">0.0172</td>
+<td align="right">0.0106</td>
+<td align="right">0.0066</td>
+<td align="right">0.0132</td>
+<td align="right">78.4500</td>
+</tr>
+<tr>
+<td align="left">magnet_arm_x</td>
+<td align="right">0.0651</td>
+<td align="right">0.0433</td>
+<td align="right">0.0453</td>
+<td align="right">0.0718</td>
+<td align="right">0.0340</td>
+<td align="right">0.0528</td>
+<td align="right">158.8800</td>
+</tr>
+<tr>
+<td align="left">magnet_arm_y</td>
+<td align="right">0.0279</td>
+<td align="right">0.0332</td>
+<td align="right">0.0370</td>
+<td align="right">0.0502</td>
+<td align="right">0.0236</td>
+<td align="right">0.0333</td>
+<td align="right">139.1993</td>
+</tr>
+<tr>
+<td align="left">magnet_arm_z</td>
+<td align="right">0.0238</td>
+<td align="right">0.0210</td>
+<td align="right">0.0178</td>
+<td align="right">0.0149</td>
+<td align="right">0.0087</td>
+<td align="right">0.0180</td>
+<td align="right">108.6937</td>
+</tr>
+<tr>
+<td align="left">roll_dumbbell</td>
+<td align="right">0.0405</td>
+<td align="right">0.0774</td>
+<td align="right">0.1071</td>
+<td align="right">0.0884</td>
+<td align="right">0.0483</td>
+<td align="right">0.0685</td>
+<td align="right">267.5199</td>
+</tr>
+<tr>
+<td align="left">pitch_dumbbell</td>
+<td align="right">0.0180</td>
+<td align="right">0.0314</td>
+<td align="right">0.0438</td>
+<td align="right">0.0295</td>
+<td align="right">0.0216</td>
+<td align="right">0.0276</td>
+<td align="right">112.8729</td>
+</tr>
+<tr>
+<td align="left">yaw_dumbbell</td>
+<td align="right">0.0300</td>
+<td align="right">0.0339</td>
+<td align="right">0.0569</td>
+<td align="right">0.0421</td>
+<td align="right">0.0278</td>
+<td align="right">0.0370</td>
+<td align="right">147.6205</td>
+</tr>
+<tr>
+<td align="left">total_accel_dumbbell</td>
+<td align="right">0.0358</td>
+<td align="right">0.0326</td>
+<td align="right">0.0396</td>
+<td align="right">0.0560</td>
+<td align="right">0.0271</td>
+<td align="right">0.0375</td>
+<td align="right">166.8152</td>
+</tr>
+<tr>
+<td align="left">gyros_dumbbell_x</td>
+<td align="right">0.0050</td>
+<td align="right">0.0146</td>
+<td align="right">0.0177</td>
+<td align="right">0.0121</td>
+<td align="right">0.0076</td>
+<td align="right">0.0107</td>
+<td align="right">80.7007</td>
+</tr>
+<tr>
+<td align="left">gyros_dumbbell_y</td>
+<td align="right">0.0259</td>
+<td align="right">0.0291</td>
+<td align="right">0.0413</td>
+<td align="right">0.0267</td>
+<td align="right">0.0163</td>
+<td align="right">0.0276</td>
+<td align="right">155.9020</td>
+</tr>
+<tr>
+<td align="left">gyros_dumbbell_z</td>
+<td align="right">0.0031</td>
+<td align="right">0.0069</td>
+<td align="right">0.0048</td>
+<td align="right">0.0065</td>
+<td align="right">0.0045</td>
+<td align="right">0.0049</td>
+<td align="right">50.0426</td>
+</tr>
+<tr>
+<td align="left">accel_dumbbell_x</td>
+<td align="right">0.0322</td>
+<td align="right">0.0359</td>
+<td align="right">0.0550</td>
+<td align="right">0.0429</td>
+<td align="right">0.0255</td>
+<td align="right">0.0374</td>
+<td align="right">160.2365</td>
+</tr>
+<tr>
+<td align="left">accel_dumbbell_y</td>
+<td align="right">0.0422</td>
+<td align="right">0.0560</td>
+<td align="right">0.1030</td>
+<td align="right">0.0623</td>
+<td align="right">0.0428</td>
+<td align="right">0.0589</td>
+<td align="right">252.3465</td>
+</tr>
+<tr>
+<td align="left">accel_dumbbell_z</td>
+<td align="right">0.0356</td>
+<td align="right">0.0436</td>
+<td align="right">0.0663</td>
+<td align="right">0.0631</td>
+<td align="right">0.0461</td>
+<td align="right">0.0489</td>
+<td align="right">206.9333</td>
+</tr>
+<tr>
+<td align="left">magnet_dumbbell_x</td>
+<td align="right">0.0957</td>
+<td align="right">0.0751</td>
+<td align="right">0.1269</td>
+<td align="right">0.1051</td>
+<td align="right">0.0509</td>
+<td align="right">0.0904</td>
+<td align="right">288.9972</td>
+</tr>
+<tr>
+<td align="left">magnet_dumbbell_y</td>
+<td align="right">0.0965</td>
+<td align="right">0.1096</td>
+<td align="right">0.1587</td>
+<td align="right">0.1487</td>
+<td align="right">0.0553</td>
+<td align="right">0.1108</td>
+<td align="right">399.1059</td>
+</tr>
+<tr>
+<td align="left">magnet_dumbbell_z</td>
+<td align="right">0.1332</td>
+<td align="right">0.0981</td>
+<td align="right">0.1504</td>
+<td align="right">0.1245</td>
+<td align="right">0.0633</td>
+<td align="right">0.1151</td>
+<td align="right">466.4318</td>
+</tr>
+<tr>
+<td align="left">roll_forearm</td>
+<td align="right">0.1286</td>
+<td align="right">0.0855</td>
+<td align="right">0.1668</td>
+<td align="right">0.1065</td>
+<td align="right">0.0630</td>
+<td align="right">0.1112</td>
+<td align="right">347.3331</td>
+</tr>
+<tr>
+<td align="left">pitch_forearm</td>
+<td align="right">0.1029</td>
+<td align="right">0.0559</td>
+<td align="right">0.0771</td>
+<td align="right">0.1200</td>
+<td align="right">0.0495</td>
+<td align="right">0.0822</td>
+<td align="right">470.5938</td>
+</tr>
+<tr>
+<td align="left">yaw_forearm</td>
+<td align="right">0.0139</td>
+<td align="right">0.0143</td>
+<td align="right">0.0227</td>
+<td align="right">0.0370</td>
+<td align="right">0.0115</td>
+<td align="right">0.0189</td>
+<td align="right">97.3126</td>
+</tr>
+<tr>
+<td align="left">total_accel_forearm</td>
+<td align="right">0.0152</td>
+<td align="right">0.0086</td>
+<td align="right">0.0117</td>
+<td align="right">0.0105</td>
+<td align="right">0.0047</td>
+<td align="right">0.0106</td>
+<td align="right">70.0865</td>
+</tr>
+<tr>
+<td align="left">gyros_forearm_x</td>
+<td align="right">0.0038</td>
+<td align="right">0.0068</td>
+<td align="right">0.0096</td>
+<td align="right">0.0111</td>
+<td align="right">0.0033</td>
+<td align="right">0.0065</td>
+<td align="right">49.8644</td>
+</tr>
+<tr>
+<td align="left">gyros_forearm_y</td>
+<td align="right">0.0089</td>
+<td align="right">0.0127</td>
+<td align="right">0.0080</td>
+<td align="right">0.0101</td>
+<td align="right">0.0048</td>
+<td align="right">0.0089</td>
+<td align="right">73.9989</td>
+</tr>
+<tr>
+<td align="left">gyros_forearm_z</td>
+<td align="right">0.0046</td>
+<td align="right">0.0096</td>
+<td align="right">0.0057</td>
+<td align="right">0.0045</td>
+<td align="right">0.0029</td>
+<td align="right">0.0054</td>
+<td align="right">54.9785</td>
+</tr>
+<tr>
+<td align="left">accel_forearm_x</td>
+<td align="right">0.0434</td>
+<td align="right">0.0399</td>
+<td align="right">0.0439</td>
+<td align="right">0.0800</td>
+<td align="right">0.0322</td>
+<td align="right">0.0467</td>
+<td align="right">182.4060</td>
+</tr>
+<tr>
+<td align="left">accel_forearm_y</td>
+<td align="right">0.0230</td>
+<td align="right">0.0143</td>
+<td align="right">0.0249</td>
+<td align="right">0.0160</td>
+<td align="right">0.0095</td>
+<td align="right">0.0180</td>
+<td align="right">90.4037</td>
+</tr>
+<tr>
+<td align="left">accel_forearm_z</td>
+<td align="right">0.0230</td>
+<td align="right">0.0265</td>
+<td align="right">0.0499</td>
+<td align="right">0.0385</td>
+<td align="right">0.0235</td>
+<td align="right">0.0310</td>
+<td align="right">146.0369</td>
+</tr>
+<tr>
+<td align="left">magnet_forearm_x</td>
+<td align="right">0.0347</td>
+<td align="right">0.0179</td>
+<td align="right">0.0260</td>
+<td align="right">0.0384</td>
+<td align="right">0.0224</td>
+<td align="right">0.0283</td>
+<td align="right">143.1043</td>
+</tr>
+<tr>
+<td align="left">magnet_forearm_y</td>
+<td align="right">0.0228</td>
+<td align="right">0.0202</td>
+<td align="right">0.0310</td>
+<td align="right">0.0291</td>
+<td align="right">0.0174</td>
+<td align="right">0.0238</td>
+<td align="right">129.0239</td>
+</tr>
+<tr>
+<td align="left">magnet_forearm_z</td>
+<td align="right">0.0268</td>
+<td align="right">0.0251</td>
+<td align="right">0.0390</td>
+<td align="right">0.0382</td>
+<td align="right">0.0202</td>
+<td align="right">0.0292</td>
+<td align="right">169.7277</td>
+</tr>
+</tbody></table>
+
+</body>
+
+</html>

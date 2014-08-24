@@ -1,0 +1,163 @@
+---
+title: "Predicting Dumbbell Curls From Wearable Accelerometers"
+author: "Jay Lillico"
+date: "August 24 2014"
+output:
+  html_document:
+    highlight: pygments
+    keep_md: yes
+    theme: cerulean
+    toc: yes
+---
+
+<style type="text/css">
+table {
+     max-width: 95%;
+     border: 1px solid #ccc;
+}
+
+th {
+     
+     background-color: #000000;
+     color: #ffffff;
+     border: 1px solid white;
+}
+
+td {
+  background-color: #BBBBBB;
+  border: 1px solid white;
+}
+</style>
+
+## Synopsis
+
+
+In this report, we examine readings from wearable accelerometers on six subjects performing dumbell curls.  Each subject performed one set of 10 dumbbell lift in 5 different manners; one correctly, and four others performed in a common incorrect manner.   From the accelerometers' readings, we will try to predict the type of lift that was performed.
+
+
+## Data Processing
+
+
+From the [Human Activity Recognition Website](http://groupware.les.inf.puc-rio.br/har) we get data on experiments on weight lifting (more specifically this [link](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)). Specifically, sensors were placed at four different locations: arm, forearm, belt and dumbbell.
+
+
+```{r libraries,echo=FALSE}
+library(knitr)
+library(randomForest)
+library(ggplot2)
+library(lattice)
+library(caret)
+library(psych)
+```
+
+
+###Reading In Data
+
+
+Data is in a .csv file.  We read the data into a data frame. Data that is blank (empty, NA) or invalid (DIV/0) are converted to NAs
+
+```{r loaddata,echo=FALSE,cache=TRUE}
+setwd("c:/jay/rstuff/pracMachine")
+
+#Download File
+setInternet2(TRUE)
+
+alldata <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","#DIV/0!","NA"))
+
+```
+
+```{r disc,echo=FALSE}
+xt <- describeData(alldata, head=1, tail=1)
+```
+
+
+### Data Slicing
+We first split the data of 19622 observations in two sets.  A training set consisting of 60% of the data, and a testing set holding 40% of the data.  The testing set will be set aside to test the final model
+
+```{r partition,echo=FALSE}
+set.seed(120)
+inTrain <- createDataPartition(alldata$classe,p=0.6,list=F)
+training <- alldata[inTrain,]
+testing <- alldata[-inTrain,]
+```
+
+###Preprocessing Data
+
+After reading in the data, we note that out of the 160 variables, there are numerous columns that contain less than around 400 observations (i.e. NA) out of the full 19622 observations.  Therefore, we'll remove these variables from our data set, to avoid the more sparse observations overfitting our prediction.  For full details, view Appendix 1.
+
+We also remove columns that are not of apredictive nature (timestamps, names, windows, indexes).  Finally, we run a single Random Forest model to determine the most important variables.  We choose those with a Mean Decrease in Gini index of greater than 160, so that we end up with close to 20 variables.  See Appendix 2 for more details
+
+```{r preprocess,echo=FALSE}
+#Factor
+training$classe <- as.factor(training$classe)
+
+#Non Descriptive Variables
+training <- training[,-c(1:7)]
+
+#Sparsely Populated Columns
+cols <- describe(training, ranges=F, skew=F)$n > 500
+training <- training[,cols]
+
+set.seed(1034)
+imp <- randomForest(training[-53],training$classe,importance=T)
+impcol <- imp$importance[,7] > 160
+training <- training[,impcol]
+
+```
+
+
+##Modelling Data
+
+We use a Random Forest to model our data.  We feel this is the best fit for the size and classification of our data. We also take advantage that cross validation is done in the Random Forest library. A summary of the model can be seen below. We estimate our out of sample error rate to be 1.29%.
+
+
+```{r fit model,echo=FALSE}
+set.seed(678)
+modFit <- train(training[,-21], training$classe, method = "rf")
+modFit$finalModel
+```
+
+###Testing Model
+
+we use our testing data set to check our model.  We alter the testing data set in the same manner as the training set.
+
+```{r predict,echo=FALSE}
+testing$classe <- as.factor(testing$classe)
+testing <- testing[,-c(1:7)]
+
+#NSparsely Populated Columns
+testing <- testing[,cols]
+testing <- testing[,impcol]
+
+pred <- predict(modFit,testing)
+```
+
+###Results
+As we see below, the test on our model shows an accuracy rate of 98.84% and  an out of sample error rate of 1.16% on our test data set.
+
+```{r results,echo=FALSE}
+confusionMatrix(pred,testing$classe)
+```
+
+And finally, some plots to show the accuracy of our predictors, and the error rate of our model as the number of trees increased.
+
+```{r graphs,echo=FALSE,fig.height=4,fig.width=8}
+par(mfrow = c(1, 1))
+plot(modFit, main=" Predictor Accuracy")
+plot(modFit$finalModel)
+```
+
+##Appendix
+
+###Appendix 1 Description Of Training Data Set Before Processing
+
+```{r appendix1,echo=FALSE,results='asis'}
+kable(xt$variables, format = "markdown")
+```
+
+###Appendix 2 Description Of Importance Of Predictors
+
+```{r appendix2,echo=FALSE,results='asis'}
+kable(imp$importance, format = "markdown")
+```
+
